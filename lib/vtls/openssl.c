@@ -775,7 +775,7 @@ int Curl_ossl_check_cxn(struct connectdata *conn)
                (RECV_TYPE_ARG3)1, (RECV_TYPE_ARG4)MSG_PEEK);
   if(nread == 0)
     return 0; /* connection has been closed */
-  else if(nread == 1)
+  if(nread == 1)
     return 1; /* connection still in place */
   else if(nread == -1) {
       int err = SOCKERRNO;
@@ -1692,6 +1692,83 @@ get_ssl_version_txt(SSL *ssl)
   return "unknown";
 }
 
+static CURLcode
+set_ssl_version_min_max(long *ctx_options, struct connectdata *conn,
+                        int sockindex)
+{
+#if (OPENSSL_VERSION_NUMBER < 0x1000100FL) || !defined(TLS1_3_VERSION)
+  /* convoluted #if condition just to avoid compiler warnings on unused
+     variable */
+  struct Curl_easy *data = conn->data;
+#endif
+  long ssl_version = SSL_CONN_CONFIG(version);
+  long ssl_version_max = SSL_CONN_CONFIG(version_max);
+
+  if(ssl_version_max == CURL_SSLVERSION_MAX_NONE) {
+    ssl_version_max = ssl_version << 16;
+  }
+
+  switch(ssl_version) {
+    case CURL_SSLVERSION_TLSv1_3:
+#ifdef TLS1_3_VERSION
+    {
+      struct ssl_connect_data *connssl = &conn->ssl[sockindex];
+      SSL_CTX_set_max_proto_version(connssl->ctx, TLS1_3_VERSION);
+      *ctx_options |= SSL_OP_NO_TLSv1_2;
+    }
+#else
+      (void)sockindex;
+      failf(data, OSSL_PACKAGE " was built without TLS 1.3 support");
+      return CURLE_NOT_BUILT_IN;
+#endif
+    case CURL_SSLVERSION_TLSv1_2:
+#if OPENSSL_VERSION_NUMBER >= 0x1000100FL
+      *ctx_options |= SSL_OP_NO_TLSv1_1;
+#else
+      failf(data, OSSL_PACKAGE " was built without TLS 1.2 support");
+      return CURLE_NOT_BUILT_IN;
+#endif
+    case CURL_SSLVERSION_TLSv1_1:
+#if OPENSSL_VERSION_NUMBER >= 0x1000100FL
+      *ctx_options |= SSL_OP_NO_TLSv1;
+#else
+      failf(data, OSSL_PACKAGE " was built without TLS 1.1 support");
+      return CURLE_NOT_BUILT_IN;
+#endif
+    case CURL_SSLVERSION_TLSv1_0:
+      *ctx_options |= SSL_OP_NO_SSLv2;
+      *ctx_options |= SSL_OP_NO_SSLv3;
+      break;
+  }
+
+  switch(ssl_version_max) {
+    case CURL_SSLVERSION_MAX_TLSv1_0:
+#if OPENSSL_VERSION_NUMBER >= 0x1000100FL
+      *ctx_options |= SSL_OP_NO_TLSv1_1;
+#endif
+      /* FALLTHROUGH */
+    case CURL_SSLVERSION_MAX_TLSv1_1:
+#if OPENSSL_VERSION_NUMBER >= 0x1000100FL
+      *ctx_options |= SSL_OP_NO_TLSv1_2;
+#endif
+      /* FALLTHROUGH */
+    case CURL_SSLVERSION_MAX_TLSv1_2:
+    case CURL_SSLVERSION_MAX_DEFAULT:
+#ifdef TLS1_3_VERSION
+      *ctx_options |= SSL_OP_NO_TLSv1_3;
+#endif
+      break;
+    case CURL_SSLVERSION_MAX_TLSv1_3:
+#ifdef TLS1_3_VERSION
+      break;
+#else
+      failf(data, OSSL_PACKAGE " was built without TLS 1.3 support");
+      return CURLE_NOT_BUILT_IN;
+#endif
+  }
+  return CURLE_OK;
+}
+
 static CURLcode ossl_connect_step1(struct connectdata *conn, int sockindex)
 {
   CURLcode result = CURLE_OK;
@@ -1701,7 +1778,7 @@ static CURLcode ossl_connect_step1(struct connectdata *conn, int sockindex)
   X509_LOOKUP *lookup = NULL;
   curl_socket_t sockfd = conn->sock[sockindex];
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
-  long ctx_options;
+  long ctx_options = 0;
 #ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
   bool sni;
 #ifdef ENABLE_IPV6
@@ -1888,60 +1965,13 @@ static CURLcode ossl_connect_step1(struct connectdata *conn, int sockindex)
     break;
 
   case CURL_SSLVERSION_TLSv1_0:
-    ctx_options |= SSL_OP_NO_SSLv2;
-    ctx_options |= SSL_OP_NO_SSLv3;
-#if OPENSSL_VERSION_NUMBER >= 0x1000100FL
-    ctx_options |= SSL_OP_NO_TLSv1_1;
-    ctx_options |= SSL_OP_NO_TLSv1_2;
-#ifdef TLS1_3_VERSION
-    ctx_options |= SSL_OP_NO_TLSv1_3;
-#endif
-#endif
-    break;
-
   case CURL_SSLVERSION_TLSv1_1:
-#if OPENSSL_VERSION_NUMBER >= 0x1000100FL
-    ctx_options |= SSL_OP_NO_SSLv2;
-    ctx_options |= SSL_OP_NO_SSLv3;
-    ctx_options |= SSL_OP_NO_TLSv1;
-    ctx_options |= SSL_OP_NO_TLSv1_2;
-#ifdef TLS1_3_VERSION
-    ctx_options |= SSL_OP_NO_TLSv1_3;
-#endif
-    break;
-#else
-    failf(data, OSSL_PACKAGE " was built without TLS 1.1 support");
-    return CURLE_NOT_BUILT_IN;
-#endif
-
   case CURL_SSLVERSION_TLSv1_2:
-#if OPENSSL_VERSION_NUMBER >= 0x1000100FL
-    ctx_options |= SSL_OP_NO_SSLv2;
-    ctx_options |= SSL_OP_NO_SSLv3;
-    ctx_options |= SSL_OP_NO_TLSv1;
-    ctx_options |= SSL_OP_NO_TLSv1_1;
-#ifdef TLS1_3_VERSION
-    ctx_options |= SSL_OP_NO_TLSv1_3;
-#endif
-    break;
-#else
-    failf(data, OSSL_PACKAGE " was built without TLS 1.2 support");
-    return CURLE_NOT_BUILT_IN;
-#endif
-
   case CURL_SSLVERSION_TLSv1_3:
-#ifdef TLS1_3_VERSION
-    SSL_CTX_set_max_proto_version(connssl->ctx, TLS1_3_VERSION);
-    ctx_options |= SSL_OP_NO_SSLv2;
-    ctx_options |= SSL_OP_NO_SSLv3;
-    ctx_options |= SSL_OP_NO_TLSv1;
-    ctx_options |= SSL_OP_NO_TLSv1_1;
-    ctx_options |= SSL_OP_NO_TLSv1_2;
+    result = set_ssl_version_min_max(&ctx_options, conn, sockindex);
+    if(result != CURLE_OK)
+       return result;
     break;
-#else
-    failf(data, OSSL_PACKAGE " was built without TLS 1.3 support");
-    return CURLE_NOT_BUILT_IN;
-#endif
 
   case CURL_SSLVERSION_SSLv2:
 #ifndef OPENSSL_NO_SSL2
@@ -2055,12 +2085,10 @@ static CURLcode ossl_connect_step1(struct connectdata *conn, int sockindex)
               ssl_capath ? ssl_capath : "none");
         return CURLE_SSL_CACERT_BADFILE;
       }
-      else {
-        /* Just continue with a warning if no strict  certificate verification
-           is required. */
-        infof(data, "error setting certificate verify locations,"
-              " continuing anyway:\n");
-      }
+      /* Just continue with a warning if no strict  certificate verification
+         is required. */
+      infof(data, "error setting certificate verify locations,"
+            " continuing anyway:\n");
     }
     else {
       /* Everything is fine. */
@@ -2090,12 +2118,11 @@ static CURLcode ossl_connect_step1(struct connectdata *conn, int sockindex)
       failf(data, "error loading CRL file: %s", ssl_crlfile);
       return CURLE_SSL_CRL_BADFILE;
     }
-    else {
-      /* Everything is fine. */
-      infof(data, "successfully load CRL file:\n");
-      X509_STORE_set_flags(SSL_CTX_get_cert_store(connssl->ctx),
-                           X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL);
-    }
+    /* Everything is fine. */
+    infof(data, "successfully load CRL file:\n");
+    X509_STORE_set_flags(SSL_CTX_get_cert_store(connssl->ctx),
+                         X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL);
+
     infof(data, "  CRLfile: %s\n", ssl_crlfile);
   }
 
@@ -2223,7 +2250,7 @@ static CURLcode ossl_connect_step2(struct connectdata *conn, int sockindex)
       connssl->connecting_state = ssl_connect_2_reading;
       return CURLE_OK;
     }
-    else if(SSL_ERROR_WANT_WRITE == detail) {
+    if(SSL_ERROR_WANT_WRITE == detail) {
       connssl->connecting_state = ssl_connect_2_writing;
       return CURLE_OK;
     }
@@ -3036,16 +3063,14 @@ static CURLcode ossl_connect_common(struct connectdata *conn,
         failf(data, "select/poll on SSL socket, errno: %d", SOCKERRNO);
         return CURLE_SSL_CONNECT_ERROR;
       }
-      else if(0 == what) {
+      if(0 == what) {
         if(nonblocking) {
           *done = FALSE;
           return CURLE_OK;
         }
-        else {
-          /* timeout */
-          failf(data, "SSL connection timeout");
-          return CURLE_OPERATION_TIMEDOUT;
-        }
+        /* timeout */
+        failf(data, "SSL connection timeout");
+        return CURLE_OPERATION_TIMEDOUT;
       }
       /* socket is readable or writable */
     }
@@ -3115,8 +3140,7 @@ bool Curl_ossl_data_pending(const struct connectdata *conn, int connindex)
            (conn->proxy_ssl[connindex].handle &&
             0 != SSL_pending(conn->proxy_ssl[connindex].handle))) ?
            TRUE : FALSE;
-  else
-    return FALSE;
+  return FALSE;
 }
 
 static ssize_t ossl_send(struct connectdata *conn,

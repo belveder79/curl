@@ -645,10 +645,10 @@ output_auth_headers(struct connectdata *conn,
           proxy ? "Proxy" : "Server", auth,
           proxy ? (conn->http_proxy.user ? conn->http_proxy.user : "") :
                   (conn->user ? conn->user : ""));
-    authstatus->multi = (!authstatus->done) ? TRUE : FALSE;
+    authstatus->multipass = (!authstatus->done) ? TRUE : FALSE;
   }
   else
-    authstatus->multi = FALSE;
+    authstatus->multipass = FALSE;
 
   return CURLE_OK;
 }
@@ -1197,8 +1197,7 @@ CURLcode Curl_add_buffer_send(Curl_send_buffer *in,
            This needs FIXing.
         */
         return CURLE_SEND_ERROR;
-      else
-        Curl_pipeline_leave_write(conn);
+      Curl_pipeline_leave_write(conn);
     }
   }
   Curl_add_buffer_free(in);
@@ -1359,6 +1358,10 @@ CURLcode Curl_http_connect(struct connectdata *conn, bool *done)
   if(result)
     return result;
 
+  if(conn->bits.proxy_connect_closed)
+    /* this is not an error, just part of the connection negotiation */
+    return CURLE_OK;
+
   if(CONNECT_FIRSTSOCKET_PROXY_SSL())
     return CURLE_OK; /* wait for HTTPS proxy SSL initialization to complete */
 
@@ -1425,6 +1428,11 @@ CURLcode Curl_http_done(struct connectdata *conn,
 {
   struct Curl_easy *data = conn->data;
   struct HTTP *http = data->req.protop;
+
+  /* Clear multipass flag. If authentication isn't done yet, then it will get
+   * a chance to be set back to true when we output the next auth header */
+  data->state.authhost.multipass = FALSE;
+  data->state.authproxy.multipass = FALSE;
 
   Curl_unencode_cleanup(conn);
 
@@ -1862,7 +1870,7 @@ CURLcode Curl_http(struct connectdata *conn, bool *done)
   if(result)
     return result;
 
-  if((data->state.authhost.multi || data->state.authproxy.multi) &&
+  if((data->state.authhost.multipass || data->state.authproxy.multipass) &&
      (httpreq != HTTPREQ_GET) &&
      (httpreq != HTTPREQ_HEAD)) {
     /* Auth is required and we are not authenticated yet. Make a PUT or POST
@@ -2147,32 +2155,31 @@ CURLcode Curl_http(struct connectdata *conn, bool *done)
       }
 
       if(seekerr != CURL_SEEKFUNC_OK) {
+        curl_off_t passed=0;
+
         if(seekerr != CURL_SEEKFUNC_CANTSEEK) {
           failf(data, "Could not seek stream");
           return CURLE_READ_ERROR;
         }
         /* when seekerr == CURL_SEEKFUNC_CANTSEEK (can't seek to offset) */
-        else {
-          curl_off_t passed=0;
-          do {
-            size_t readthisamountnow =
-              (data->state.resume_from - passed > CURL_OFF_T_C(BUFSIZE)) ?
-              BUFSIZE : curlx_sotouz(data->state.resume_from - passed);
+        do {
+          size_t readthisamountnow =
+            (data->state.resume_from - passed > CURL_OFF_T_C(BUFSIZE)) ?
+            BUFSIZE : curlx_sotouz(data->state.resume_from - passed);
 
-            size_t actuallyread =
-              data->state.fread_func(data->state.buffer, 1, readthisamountnow,
-                                     data->state.in);
+          size_t actuallyread =
+            data->state.fread_func(data->state.buffer, 1, readthisamountnow,
+                                   data->state.in);
 
-            passed += actuallyread;
-            if((actuallyread == 0) || (actuallyread > readthisamountnow)) {
-              /* this checks for greater-than only to make sure that the
-                 CURL_READFUNC_ABORT return code still aborts */
-              failf(data, "Could only read %" CURL_FORMAT_CURL_OFF_T
-                    " bytes from the input", passed);
-              return CURLE_READ_ERROR;
-            }
-          } while(passed < data->state.resume_from);
-        }
+          passed += actuallyread;
+          if((actuallyread == 0) || (actuallyread > readthisamountnow)) {
+            /* this checks for greater-than only to make sure that the
+               CURL_READFUNC_ABORT return code still aborts */
+            failf(data, "Could only read %" CURL_FORMAT_CURL_OFF_T
+                  " bytes from the input", passed);
+            return CURLE_READ_ERROR;
+          }
+        } while(passed < data->state.resume_from);
       }
 
       /* now, decrease the size of the read */
@@ -2818,8 +2825,7 @@ checkrtspprefix(struct Curl_easy *data,
 #endif /* CURL_DOES_CONVERSIONS */
   if(checkprefix("RTSP/", s))
     return TRUE;
-  else
-    return FALSE;
+  return FALSE;
 }
 #endif /* CURL_DISABLE_RTSP */
 
@@ -3240,9 +3246,17 @@ CURLcode Curl_http_readwrite_headers(struct Curl_easy *data,
           k->maxdownload = k->size;
         }
 
-        /* If max download size is *zero* (nothing) we already
-           have nothing and can safely return ok now! */
-        if(0 == k->maxdownload)
+        /* If max download size is *zero* (nothing) we already have
+           nothing and can safely return ok now!  But for HTTP/2, we'd
+           like to call http2_handle_stream_close to properly close a
+           stream.  In order to do this, we keep reading until we
+           close the stream. */
+        if(0 == k->maxdownload
+#if defined(USE_NGHTTP2)
+           && !((conn->handler->protocol & PROTO_FAMILY_HTTP) &&
+                conn->httpversion == 20)
+#endif
+           )
           *stop_reading = TRUE;
 
         if(*stop_reading) {

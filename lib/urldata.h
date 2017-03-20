@@ -350,6 +350,7 @@ struct ssl_connect_data {
 
 struct ssl_primary_config {
   long version;          /* what version the client wants to use */
+  long version_max;      /* max supported version the client wants to use*/
   bool verifypeer;       /* set TRUE if this is desired */
   bool verifyhost;       /* set TRUE if CN/SAN must match hostname */
   bool verifystatus;     /* set TRUE if certificate status must be checked */
@@ -1282,8 +1283,8 @@ struct auth {
                           this resource */
   bool done;  /* TRUE when the auth phase is done and ready to do the *actual*
                  request */
-  bool multi; /* TRUE if this is not yet authenticated but within the auth
-                 multipass negotiation */
+  bool multipass; /* TRUE if this is not yet authenticated but within the
+                     auth multipass negotiation */
   bool iestyle; /* TRUE if digest should be done IE-style or FALSE if it should
                    be RFC compliant */
 };
@@ -1755,6 +1756,8 @@ struct UserDefined {
   bool pipewait;        /* wait for pipe/multiplex status before starting a
                            new connection */
   long expect_100_timeout; /* in milliseconds */
+  bool suppress_connect_headers;  /* suppress proxy CONNECT response headers
+                                     from user callbacks */
 
   struct Curl_easy *stream_depends_on;
   bool stream_depends_e; /* set or don't set the Exclusive bit */

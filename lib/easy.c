@@ -773,8 +773,7 @@ static CURLcode easy_perform(struct Curl_easy *data, bool events)
     curl_multi_cleanup(multi);
     if(mcode == CURLM_OUT_OF_MEMORY)
       return CURLE_OUT_OF_MEMORY;
-    else
-      return CURLE_FAILED_INIT;
+    return CURLE_FAILED_INIT;
   }
 
   sigpipe_ignore(data, &pipe_st);
@@ -981,6 +980,10 @@ void curl_easy_reset(struct Curl_easy *data)
 
   data->progress.flags |= PGRS_HIDE;
   data->state.current_speed = -1; /* init to negative == impossible */
+
+  /* zero out authentication data: */
+  memset(&data->state.authhost, 0, sizeof(struct auth));
+  memset(&data->state.authproxy, 0, sizeof(struct auth));
 }
 
 /*
