@@ -177,6 +177,7 @@ bool Curl_verify_windows_version(const unsigned int majorVersion,
     }
   }
 #else
+  /*
   ULONGLONG cm = 0;
   OSVERSIONINFOEX osver;
   BYTE majorCondition;
@@ -243,6 +244,7 @@ bool Curl_verify_windows_version(const unsigned int majorVersion,
   if(VerifyVersionInfo(&osver, (VER_MAJORVERSION | VER_MINORVERSION |
                                 VER_SERVICEPACKMAJOR | VER_SERVICEPACKMINOR),
                        cm))
+	  */
     matched = TRUE;
 #endif
 

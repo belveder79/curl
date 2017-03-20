@@ -1766,10 +1766,10 @@ static CURLcode operate_do(struct GlobalConfig *global,
             /* 910670515199 is the maximum unix filetime that can be used as a
                Windows FILETIME without overflow: 30827-12-31T23:59:59. */
             if(filetime <= CURL_OFF_T_C(910670515199)) {
-              HANDLE hfile = CreateFileA(outs.filename, FILE_WRITE_ATTRIBUTES,
-                                         (FILE_SHARE_READ | FILE_SHARE_WRITE |
-                                          FILE_SHARE_DELETE),
-                                         NULL, OPEN_EXISTING, 0, NULL);
+				HANDLE hfile = NULL; // CreateFileA(outs.filename, FILE_WRITE_ATTRIBUTES,
+                                     //    (FILE_SHARE_READ | FILE_SHARE_WRITE |
+                                     //     FILE_SHARE_DELETE),
+                                     //    NULL, OPEN_EXISTING, 0, NULL);
               if(hfile != INVALID_HANDLE_VALUE) {
                 curl_off_t converted = ((curl_off_t)filetime * 10000000) +
                                        CURL_OFF_T_C(116444736000000000);

@@ -1,4 +1,6 @@
 set(EXE_NAME curl)
+set(LIB_NAME libcurlwrapper)
+#SET(DUMMY_LIB_NAME dummylib)
 
 if(USE_MANUAL)
   find_package(Perl REQUIRED)
@@ -43,6 +45,32 @@ if(MSVC)
   list(APPEND CURL_SOURCE curl.rc)
 endif()
 
+add_executable(
+  testWrapper
+  testWrapper.c
+)
+
+#add_executable(
+#  testWrapperDummy
+#  testWrapperDummy.c
+#)
+
+#add_library(
+#  ${DUMMY_LIB_NAME} SHARED
+#  dummyDLL.c
+#  )
+#SET_TARGET_PROPERTIES(${DUMMY_LIB_NAME} PROPERTIES
+#  COMPILE_DEFINITIONS CUSTOM_API_EXPORT
+#)
+
+add_library(
+  ${LIB_NAME} SHARED
+  ${CURL_FILES}
+  )
+SET_TARGET_PROPERTIES(${LIB_NAME} PROPERTIES
+  COMPILE_DEFINITIONS CUSTOM_API_EXPORT
+)
+
 # CURL_FILES comes from Makefile.inc
 add_executable(
   ${EXE_NAME}
@@ -64,6 +92,12 @@ include_directories(
 #Build curl executable
 target_link_libraries( ${EXE_NAME} libcurl ${CURL_LIBS})
 
+target_link_libraries( ${LIB_NAME} libcurl ${CURL_LIBS})
+
+target_link_libraries( testWrapper ${LIB_NAME})
+
+#target_link_libraries( testWrapperDummy ${DUMMY_LIB_NAME})
+
 ################################################################################
 
 #SET_TARGET_PROPERTIES(${EXE_NAME} ARCHIVE_OUTPUT_DIRECTORY "blah blah blah")
@@ -74,6 +108,10 @@ target_link_libraries( ${EXE_NAME} libcurl ${CURL_LIBS})
 set_target_properties(${EXE_NAME} PROPERTIES
   DEBUG_POSTFIX "${CMAKE_DEBUG_POSTFIX}")
 
+set_target_properties(${LIB_NAME} PROPERTIES
+  DEBUG_POSTFIX "${CMAKE_DEBUG_POSTFIX}")
+
 #INCLUDE(ModuleInstall OPTIONAL)
 
 install(TARGETS ${EXE_NAME} DESTINATION bin)
+install(TARGETS ${LIB_NAME} DESTINATION bin)

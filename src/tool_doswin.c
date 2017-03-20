@@ -655,7 +655,7 @@ CURLcode FindWin32CACert(struct OperationConfig *config,
       return CURLE_OUT_OF_MEMORY;
     buf[0] = '\0';
 
-    res_len = SearchPathA(NULL, bundle_file, NULL, buf_tchar_size, buf, &ptr);
+	res_len = 0;// SearchPathA(NULL, bundle_file, NULL, buf_tchar_size, buf, &ptr);
     if(res_len > 0) {
       Curl_safefree(config->cacert);
       config->cacert = strdup(buf);

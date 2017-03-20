@@ -30,12 +30,12 @@
 static
 char *GetEnv(const char *variable)
 {
-#if defined(_WIN32_WCE) || defined(CURL_WINDOWS_APP)
+//#if defined(_WIN32_WCE) || defined(CURL_WINDOWS_APP)
   (void)variable;
   return NULL;
-#else
+/*#else
 #ifdef WIN32
-  char env[MAX_PATH]; /* MAX_PATH is from windef.h */
+  char env[MAX_PATH]; // MAX_PATH is from windef.h 
   char *temp = getenv(variable);
   env[0] = '\0';
   if(temp != NULL)
@@ -45,7 +45,7 @@ char *GetEnv(const char *variable)
   char *env = getenv(variable);
   return (env && env[0])?strdup(env):NULL;
 #endif
-#endif
+#endif*/
 }
 
 char *curl_getenv(const char *v)
