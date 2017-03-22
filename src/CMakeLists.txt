@@ -1,5 +1,9 @@
 set(EXE_NAME curl)
 set(LIB_NAME libcurlwrapper)
+IF(UWP)
+  ADD_DEFINITIONS(-DUWPBUILD)
+ENDIF(UWP)
+
 #SET(DUMMY_LIB_NAME dummylib)
 
 if(USE_MANUAL)

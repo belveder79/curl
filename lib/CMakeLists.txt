@@ -1,5 +1,9 @@
 set(LIB_NAME libcurl)
 
+IF(UWP)
+  ADD_DEFINITIONS(-DUWPBUILD)
+ENDIF(UWP)
+
 configure_file(${CURL_SOURCE_DIR}/include/curl/curlbuild.h.cmake
   ${CURL_BINARY_DIR}/include/curl/curlbuild.h)
 configure_file(curl_config.h.cmake
