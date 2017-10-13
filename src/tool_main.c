@@ -58,7 +58,7 @@ DECLDIR int mainwrapped(char* argv)
 	char** inargs = (char**)malloc(256 * sizeof(char*));
 	int num = 0; int start = 0; bool open = false;
 	for (int i = 0; i < strlen(argv); i++) {
-		if (*(argv + i) == '\'')
+		if (*(argv + i) == '\"')
 			open = !open;
 		if ((*(argv + i) == ' ' || i == strlen(argv) - 1) && !open)
 		{
@@ -71,12 +71,12 @@ DECLDIR int mainwrapped(char* argv)
 	}
 
 	int retval = main(num, inargs);
-	
+
 	// clean up memory
 	for (int i = 0; i < num; i++)
 		free(inargs[i]);
 	free(inargs);
-	
+
 	return retval;
 }
 #endif // CUSTOM_API_EXPORT
