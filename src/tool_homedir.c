@@ -31,7 +31,7 @@
 
 static char *GetEnv(const char *variable, char do_expand)
 {
-	
+	/*
   char *env = NULL;
 #ifdef WIN32
   char  buf1[1024], buf2[1024];
@@ -46,7 +46,7 @@ static char *GetEnv(const char *variable, char do_expand)
     variable = buf1;
   }
   if(do_expand && strchr(variable, '%')) {
-    /* buf2 == variable if not expanded */
+    // buf2 == variable if not expanded 
     rc = ExpandEnvironmentStringsA(variable, buf2, sizeof(buf2));
     if(rc > 0 && rc < sizeof(buf2) &&
        !strchr(buf2, '%'))    // no vars still unexpanded 
@@ -57,6 +57,7 @@ static char *GetEnv(const char *variable, char do_expand)
   // no length control 
   env = getenv(variable);
 #endif
+	*/
   return (env && env[0]) ? strdup(env) : NULL;
 }
 
