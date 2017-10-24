@@ -31,8 +31,8 @@
 
 static char *GetEnv(const char *variable, char do_expand)
 {
-	/*
   char *env = NULL;
+	/*
 #ifdef WIN32
   char  buf1[1024], buf2[1024];
   DWORD rc;
