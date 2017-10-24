@@ -197,11 +197,13 @@ static void setfiletime(long filetime, const char *filename,
     }
 #endif /* SIZEOF_LONG >= 8 */
 
-    hfile = CreateFileA(filename, FILE_WRITE_ATTRIBUTES,
+    hfile = INVALID_HANDLE_VALUE;
+		/* CreateFileA(filename, FILE_WRITE_ATTRIBUTES,
                         (FILE_SHARE_READ | FILE_SHARE_WRITE |
                          FILE_SHARE_DELETE),
                         NULL, OPEN_EXISTING, 0, NULL);
-    if(hfile != INVALID_HANDLE_VALUE) {
+    */
+	if(hfile != INVALID_HANDLE_VALUE) {
       curl_off_t converted = ((curl_off_t)filetime * 10000000) +
                              CURL_OFF_T_C(116444736000000000);
       FILETIME ft;
