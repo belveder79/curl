@@ -46,7 +46,7 @@ transform_makefile_inc("Makefile.inc" "${CMAKE_CURRENT_BINARY_DIR}/Makefile.inc.
 include(${CMAKE_CURRENT_BINARY_DIR}/Makefile.inc.cmake)
 
 if(MSVC)
-  list(APPEND CURL_SOURCE curl.rc)
+  list(APPEND CURL_FILES curl.rc)
 endif()
 
 add_executable(
@@ -117,5 +117,15 @@ set_target_properties(${LIB_NAME} PROPERTIES
 
 #INCLUDE(ModuleInstall OPTIONAL)
 
-install(TARGETS ${EXE_NAME} DESTINATION bin)
-install(TARGETS ${LIB_NAME} DESTINATION bin)
+install(TARGETS ${EXE_NAME} ${LIB_NAME} EXPORT curl-target DESTINATION bin)
+export(TARGETS ${EXE_NAME} ${LIB_NAME}
+       APPEND FILE ${PROJECT_BINARY_DIR}/curl-target.cmake
+       NAMESPACE CURL::
+)
+
+install(EXPORT curl-target
+        FILE curl-target.cmake
+        NAMESPACE CURL::
+        DESTINATION ${CURL_INSTALL_CMAKE_DIR}
+)
+
