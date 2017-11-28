@@ -1,5 +1,5 @@
 set(EXE_NAME curl)
-set(LIB_NAME libcurlwrapper)
+set(LIB_NAME curlwrapper)
 IF(UWP)
   ADD_DEFINITIONS(-DUWPBUILD)
 ENDIF(UWP)
@@ -80,6 +80,7 @@ add_executable(
   ${EXE_NAME}
   ${CURL_FILES}
   )
+add_dependencies(${EXE_NAME} ${LIB_NAME})
 
 source_group("curlX source files" FILES ${CURLX_CFILES})
 source_group("curl source files" FILES ${CURL_CFILES})
