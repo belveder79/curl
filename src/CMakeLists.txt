@@ -99,7 +99,7 @@ target_link_libraries( ${EXE_NAME} libcurl ${CURL_LIBS})
 
 target_link_libraries( ${LIB_NAME} libcurl ${CURL_LIBS})
 
-target_link_libraries( testwrapper ${LIB_NAME})
+target_link_libraries( testwrapper ${LIB_NAME} ${CURL_LIBS})
 
 #target_link_libraries( testWrapperDummy ${DUMMY_LIB_NAME})
 
