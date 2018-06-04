@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2017, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -50,10 +50,6 @@
 # endif
 #endif
 
-
-#define FILE_CONTENTTYPE_DEFAULT        "application/octet-stream"
-#define MULTIPART_CONTENTTYPE_DEFAULT   "multipart/mixed"
-#define DISPOSITION_DEFAULT             "attachment"
 
 #define READ_ERROR                      ((size_t) -1)
 
@@ -245,7 +241,7 @@ static FILE * vmsfopenread(const char *file, const char *mode)
 static char *Curl_basename(char *path)
 {
   /* Ignore all the details above for now and make a quick and simple
-     implementaion here */
+     implementation here */
   char *s1;
   char *s2;
 
@@ -791,10 +787,10 @@ static size_t read_encoded_part_content(curl_mimepart *part,
       st->bufbeg = 0;
       st->bufend = len;
     }
-    if(st->bufend >= sizeof st->buf)
+    if(st->bufend >= sizeof(st->buf))
       return cursize? cursize: READ_ERROR;    /* Buffer full. */
     sz = read_part_content(part, st->buf + st->bufend,
-                           sizeof st->buf - st->bufend);
+                           sizeof(st->buf) - st->bufend);
     switch(sz) {
     case 0:
       ateof = TRUE;
@@ -1140,6 +1136,81 @@ void curl_mime_free(curl_mime *mime)
   }
 }
 
+CURLcode Curl_mime_duppart(curl_mimepart *dst, const curl_mimepart *src)
+{
+  curl_mime *mime;
+  curl_mimepart *d;
+  const curl_mimepart *s;
+  CURLcode res = CURLE_OK;
+
+  /* Duplicate content. */
+  switch(src->kind) {
+  case MIMEKIND_NONE:
+    break;
+  case MIMEKIND_DATA:
+    res = curl_mime_data(dst, src->data, (size_t) src->datasize);
+    break;
+  case MIMEKIND_FILE:
+    res = curl_mime_filedata(dst, src->data);
+    /* Do not abort duplication if file is not readable. */
+    if(res == CURLE_READ_ERROR)
+      res = CURLE_OK;
+    break;
+  case MIMEKIND_CALLBACK:
+    res = curl_mime_data_cb(dst, src->datasize, src->readfunc,
+                            src->seekfunc, src->freefunc, src->arg);
+    break;
+  case MIMEKIND_MULTIPART:
+    /* No one knows about the cloned subparts, thus always attach ownership
+       to the part. */
+    mime = curl_mime_init(dst->easy);
+    res = mime? curl_mime_subparts(dst, mime): CURLE_OUT_OF_MEMORY;
+
+    /* Duplicate subparts. */
+    for(s = ((curl_mime *) src->arg)->firstpart; !res && s; s = s->nextpart) {
+      d = curl_mime_addpart(mime);
+      res = d? Curl_mime_duppart(d, s): CURLE_OUT_OF_MEMORY;
+    }
+    break;
+  default:  /* Invalid kind: should not occur. */
+    res = CURLE_BAD_FUNCTION_ARGUMENT;  /* Internal error? */
+    break;
+  }
+
+  /* Duplicate headers. */
+  if(!res && src->userheaders) {
+    struct curl_slist *hdrs = Curl_slist_duplicate(src->userheaders);
+
+    if(!hdrs)
+      res = CURLE_OUT_OF_MEMORY;
+    else {
+      /* No one but this procedure knows about the new header list,
+         so always take ownership. */
+      res = curl_mime_headers(dst, hdrs, TRUE);
+      if(res)
+        curl_slist_free_all(hdrs);
+    }
+  }
+
+  /* Duplicate other fields. */
+  if(dst != NULL)
+    dst->encoder = src->encoder;
+  else
+    res = CURLE_WRITE_ERROR;
+  if(!res)
+    res = curl_mime_type(dst, src->mimetype);
+  if(!res)
+    res = curl_mime_name(dst, src->name);
+  if(!res)
+    res = curl_mime_filename(dst, src->filename);
+
+  /* If an error occurred, rollback. */
+  if(res && dst)
+    Curl_mime_cleanpart(dst);
+
+  return res;
+}
+
 /*
  * Mime build functions.
  */
@@ -1149,7 +1220,7 @@ curl_mime *curl_mime_init(struct Curl_easy *easy)
 {
   curl_mime *mime;
 
-  mime = (curl_mime *) malloc(sizeof *mime);
+  mime = (curl_mime *) malloc(sizeof(*mime));
 
   if(mime) {
     mime->easy = easy;
@@ -1176,7 +1247,7 @@ curl_mime *curl_mime_init(struct Curl_easy *easy)
 /* Initialize a mime part. */
 void Curl_mime_initpart(curl_mimepart *part, struct Curl_easy *easy)
 {
-  memset((char *) part, 0, sizeof *part);
+  memset((char *) part, 0, sizeof(*part));
   part->easy = easy;
   mimesetstate(&part->state, MIMESTATE_BEGIN, NULL);
 }
@@ -1189,7 +1260,7 @@ curl_mimepart *curl_mime_addpart(curl_mime *mime)
   if(!mime)
     return NULL;
 
-  part = (curl_mimepart *) malloc(sizeof *part);
+  part = (curl_mimepart *) malloc(sizeof(*part));
 
   if(part) {
     Curl_mime_initpart(part, mime->easy);
@@ -1570,8 +1641,7 @@ static CURLcode add_content_type(struct curl_slist **slp,
                               boundary? boundary: "");
 }
 
-
-static const char *ContentTypeForFilename(const char *filename)
+const char *Curl_mime_contenttype(const char *filename)
 {
   unsigned int i;
 
@@ -1600,7 +1670,7 @@ static const char *ContentTypeForFilename(const char *filename)
     size_t len1 = strlen(filename);
     const char *nameend = filename + len1;
 
-    for(i = 0; i < sizeof ctts / sizeof ctts[0]; i++) {
+    for(i = 0; i < sizeof(ctts) / sizeof(ctts[0]); i++) {
       size_t len2 = strlen(ctts[i].extension);
 
       if(len1 >= len2 && strcasecompare(nameend - len2, ctts[i].extension))
@@ -1643,14 +1713,14 @@ CURLcode Curl_mime_prepare_headers(curl_mimepart *part,
       contenttype = MULTIPART_CONTENTTYPE_DEFAULT;
       break;
     case MIMEKIND_FILE:
-      contenttype = ContentTypeForFilename(part->filename);
+      contenttype = Curl_mime_contenttype(part->filename);
       if(!contenttype)
-        contenttype = ContentTypeForFilename(part->data);
+        contenttype = Curl_mime_contenttype(part->data);
       if(!contenttype && part->filename)
         contenttype = FILE_CONTENTTYPE_DEFAULT;
       break;
     default:
-      contenttype = ContentTypeForFilename(part->filename);
+      contenttype = Curl_mime_contenttype(part->filename);
       break;
     }
   }
@@ -1853,6 +1923,13 @@ void Curl_mime_initpart(curl_mimepart *part, struct Curl_easy *easy)
 void Curl_mime_cleanpart(curl_mimepart *part)
 {
   (void) part;
+}
+
+CURLcode Curl_mime_duppart(curl_mimepart *dst, const curl_mimepart *src)
+{
+  (void) dst;
+  (void) src;
+  return CURLE_OK;    /* Nothing to duplicate: always succeed. */
 }
 
 CURLcode Curl_mime_set_subparts(curl_mimepart *part,

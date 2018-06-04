@@ -34,6 +34,9 @@
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
+#ifdef HAVE_NETINET_IN6_H
+#include <netinet/in6.h>
+#endif
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
@@ -1062,7 +1065,7 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
   char *cmd = NULL;
   size_t cmdsize = 0;
   FILE *dump;
-  bool persistant = TRUE;
+  bool persistent = TRUE;
   bool sendfailure = FALSE;
   size_t responsesize;
   int error = 0;
@@ -1193,7 +1196,7 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
      connection will be closed after the data has been sent to the requesting
      client... */
   if(strstr(buffer, "swsclose") || !count) {
-    persistant = FALSE;
+    persistent = FALSE;
     logmsg("connection close instruction \"swsclose\" found in response");
   }
   if(strstr(buffer, "swsbounce")) {
@@ -1310,7 +1313,7 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
     } while(ptr && *ptr);
   }
   free(cmd);
-  req->open = use_gopher?FALSE:persistant;
+  req->open = use_gopher?FALSE:persistent;
 
   prevtestno = req->testno;
   prevpartno = req->partno;
@@ -1344,7 +1347,7 @@ static curl_socket_t connect_to(const char *ipaddr, unsigned short port)
   serverfd = socket(socket_domain, SOCK_STREAM, 0);
   if(CURL_SOCKET_BAD == serverfd) {
     error = SOCKERRNO;
-    logmsg("Error creating socket for server conection: (%d) %s",
+    logmsg("Error creating socket for server connection: (%d) %s",
            error, strerror(error));
     return CURL_SOCKET_BAD;
   }
@@ -1355,7 +1358,7 @@ static curl_socket_t connect_to(const char *ipaddr, unsigned short port)
     curl_socklen_t flag = 1;
     if(0 != setsockopt(serverfd, IPPROTO_TCP, TCP_NODELAY,
                        (void *)&flag, sizeof(flag)))
-      logmsg("====> TCP_NODELAY for server conection failed");
+      logmsg("====> TCP_NODELAY for server connection failed");
   }
 #endif
 
@@ -1420,7 +1423,7 @@ static curl_socket_t connect_to(const char *ipaddr, unsigned short port)
  * either end.
  *
  * When doing FTP through a CONNECT proxy, we expect that the data connection
- * will be setup while the first connect is still being kept up. Therefor we
+ * will be setup while the first connect is still being kept up. Therefore we
  * must accept a new connection and deal with it appropriately.
  */
 
@@ -1564,7 +1567,7 @@ static void http_connect(curl_socket_t *infdp,
             curl_socklen_t flag = 1;
             if(0 != setsockopt(datafd, IPPROTO_TCP, TCP_NODELAY,
                                (void *)&flag, sizeof(flag)))
-              logmsg("====> TCP_NODELAY for client DATA conection failed");
+              logmsg("====> TCP_NODELAY for client DATA connection failed");
           }
 #endif
           req2.pipelining = FALSE;
@@ -1965,7 +1968,7 @@ static int service_connection(curl_socket_t msgsock, struct httprequest *req,
   /* if we got a CONNECT, loop and get another request as well! */
 
   if(req->open) {
-    logmsg("=> persistant connection request ended, awaits new request\n");
+    logmsg("=> persistent connection request ended, awaits new request\n");
     return 1;
   }
 

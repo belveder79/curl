@@ -33,6 +33,9 @@
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
+#ifdef HAVE_NETINET_IN6_H
+#include <netinet/in6.h>
+#endif
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
@@ -901,7 +904,7 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
   char *cmd = NULL;
   size_t cmdsize = 0;
   FILE *dump;
-  bool persistant = TRUE;
+  bool persistent = TRUE;
   bool sendfailure = FALSE;
   size_t responsesize;
   int error = 0;
@@ -1043,7 +1046,7 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
      connection will be closed after the data has been sent to the requesting
      client... */
   if(strstr(buffer, "swsclose") || !count) {
-    persistant = FALSE;
+    persistent = FALSE;
     logmsg("connection close instruction \"swsclose\" found in response");
   }
   if(strstr(buffer, "swsbounce")) {
@@ -1173,7 +1176,7 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
     } while(ptr && *ptr);
   }
   free(cmd);
-  req->open = persistant;
+  req->open = persistent;
 
   prevtestno = req->testno;
   prevpartno = req->partno;
@@ -1427,7 +1430,7 @@ int main(int argc, char *argv[])
       }
 
       if(req.open)
-        logmsg("=> persistant connection request ended, awaits new request");
+        logmsg("=> persistent connection request ended, awaits new request");
       /* if we got a CONNECT, loop and get another request as well! */
     } while(req.open || (req.testno == DOCNUMBER_CONNECT));
 

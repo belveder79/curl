@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2017, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -74,10 +74,10 @@
     x->subend = x->subpointer;                          \
     CURL_SB_CLEAR(x);                                   \
   } WHILE_FALSE
-#define CURL_SB_ACCUM(x,c)                                   \
-  do {                                                       \
-    if(x->subpointer < (x->subbuffer + sizeof x->subbuffer)) \
-      *x->subpointer++ = (c);                                \
+#define CURL_SB_ACCUM(x,c)                                      \
+  do {                                                          \
+    if(x->subpointer < (x->subbuffer + sizeof(x->subbuffer)))   \
+      *x->subpointer++ = (c);                                   \
   } WHILE_FALSE
 
 #define  CURL_SB_GET(x) ((*x->subpointer++)&0xff)
@@ -764,7 +764,7 @@ static void printsub(struct Curl_easy *data,
     switch(pointer[0]) {
     case CURL_TELOPT_NAWS:
       if(length > 4)
-        infof(data, "Width: %hu ; Height: %hu", (pointer[1]<<8) | pointer[2],
+        infof(data, "Width: %d ; Height: %d", (pointer[1]<<8) | pointer[2],
               (pointer[3]<<8) | pointer[4]);
       break;
     default:
@@ -1017,7 +1017,7 @@ static void sendsuboption(struct connectdata *conn, int option)
     CURL_SB_ACCUM(tn, CURL_IAC);
     CURL_SB_ACCUM(tn, CURL_SB);
     CURL_SB_ACCUM(tn, CURL_TELOPT_NAWS);
-    /* We must deal either with litte or big endian processors */
+    /* We must deal either with little or big endian processors */
     /* Window size must be sent according to the 'network order' */
     x = htons(tn->subopt_wsx);
     y = htons(tn->subopt_wsy);
@@ -1203,8 +1203,7 @@ CURLcode telrcv(struct connectdata *conn,
           CURL_SB_ACCUM(tn, c);
           tn->telrcv_state = CURL_TS_SB;
         }
-        else
-        {
+        else {
           CURL_SB_ACCUM(tn, CURL_IAC);
           CURL_SB_ACCUM(tn, CURL_SE);
           tn->subpointer -= 2;
@@ -1460,7 +1459,8 @@ static CURLcode telnet_do(struct connectdata *conn, bool *done)
           if(n == 0)                        /* no bytes */
             break;
 
-          readfile_read = (DWORD)n; /* fall thru with number of bytes read */
+          /* fall through with number of bytes read */
+          readfile_read = (DWORD)n;
         }
         else {
           /* read from stdin */
