@@ -37,10 +37,10 @@ curl_off_t getfiletime(const char *filename, FILE *error_stream)
 #if defined(WIN32) && (SIZEOF_CURL_OFF_T >= 8)
   HANDLE hfile;
 
-  hfile = CreateFileA(filename, FILE_READ_ATTRIBUTES,
+  hfile = INVALID_HANDLE_VALUE; /* CreateFileA(filename, FILE_READ_ATTRIBUTES,
                       (FILE_SHARE_READ | FILE_SHARE_WRITE |
                        FILE_SHARE_DELETE),
-                      NULL, OPEN_EXISTING, 0, NULL);
+                      NULL, OPEN_EXISTING, 0, NULL); */
   if(hfile != INVALID_HANDLE_VALUE) {
     FILETIME ft;
     if(GetFileTime(hfile, NULL, NULL, &ft)) {
@@ -103,10 +103,11 @@ void setfiletime(curl_off_t filetime, const char *filename,
       return;
     }
 
-    hfile = CreateFileA(filename, FILE_WRITE_ATTRIBUTES,
+	hfile = INVALID_HANDLE_VALUE;
+	/*CreateFileA(filename, FILE_WRITE_ATTRIBUTES,
                         (FILE_SHARE_READ | FILE_SHARE_WRITE |
                          FILE_SHARE_DELETE),
-                        NULL, OPEN_EXISTING, 0, NULL);
+                        NULL, OPEN_EXISTING, 0, NULL); */
     if(hfile != INVALID_HANDLE_VALUE) {
       curl_off_t converted = ((curl_off_t)filetime * 10000000) +
                              CURL_OFF_T_C(116444736000000000);
