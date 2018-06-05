@@ -95,14 +95,21 @@ include_directories(
   )
 
 #Build curl executable
-target_link_libraries( ${EXE_NAME} libcurl ${CURL_LIBS} -lrtmp)
+target_link_libraries( ${EXE_NAME} libcurl ${CURL_LIBS})
+#IF(USE_LIBRTMP)
+#  target_link_libraries( ${EXE_NAME} "-lrtmp")
+#ENDIF(USE_LIBRTMP)
 
-target_link_libraries( ${LIB_NAME} libcurl ${CURL_LIBS} -lrtmp)
+
+target_link_libraries( ${LIB_NAME} libcurl ${CURL_LIBS})
 
 target_link_libraries( testwrapper ${LIB_NAME} ${CURL_LIBS})
 IF(NOT WIN32)
-  target_link_libraries( testwrapper "-pthread -lrtmp")
+  target_link_libraries( testwrapper "-pthread")
 ENDIF(NOT WIN32)
+#IF(USE_LIBRTMP)
+#  target_link_libraries( testwrapper "-lrtmp")
+#ENDIF(USE_LIBRTMP)
 
 
 #target_link_libraries( testWrapperDummy ${DUMMY_LIB_NAME})
