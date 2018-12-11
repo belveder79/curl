@@ -95,7 +95,7 @@ include_directories(
   )
 
 #Build curl executable
-target_link_libraries( ${EXE_NAME} libcurl ${CURL_LIBS})
+target_link_libraries(${EXE_NAME} libcurl ${CURL_LIBS})
 #IF(USE_LIBRTMP)
 #  target_link_libraries( ${EXE_NAME} "-lrtmp")
 #ENDIF(USE_LIBRTMP)
@@ -130,13 +130,6 @@ set_target_properties(${LIB_NAME} PROPERTIES
 #INCLUDE(ModuleInstall OPTIONAL)
 
 install(TARGETS ${EXE_NAME} ${LIB_NAME} EXPORT curl-target DESTINATION bin)
-export(TARGETS ${EXE_NAME} ${LIB_NAME}
-       APPEND FILE ${PROJECT_BINARY_DIR}/curl-target.cmake
+export(TARGETS ${EXE_NAME} ${LIB_NAME}       APPEND FILE ${PROJECT_BINARY_DIR}/curl-target.cmake
        NAMESPACE CURL::
-)
-
-install(EXPORT curl-target
-        FILE curl-target.cmake
-        NAMESPACE CURL::
-        DESTINATION ${CURL_INSTALL_CMAKE_DIR}
 )

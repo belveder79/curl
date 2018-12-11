@@ -72,7 +72,7 @@ static void fly(struct ProgressData *bar, bool moved)
   int pos;
   int check = bar->width - 2;
 
-  snprintf(buf, sizeof(buf), "%*s\r", bar->width-1, " ");
+  msnprintf(buf, sizeof(buf), "%*s\r", bar->width-1, " ");
   memcpy(&buf[bar->bar], "-=O=-", 5);
 
   pos = sinus[bar->tick%200] / (10000 / check);
@@ -113,12 +113,6 @@ int tool_progress_cb(void *clientp,
   /* The original progress-bar source code was written for curl by Lars Aas,
      and this new edition inherits some of his concepts. */
 
-  char line[MAX_BARLENGTH + 1];
-  char format[40];
-  double frac;
-  double percent;
-  int barwidth;
-  int num;
   struct timeval now = tvnow();
   struct ProgressData *bar = (struct ProgressData *)clientp;
   curl_off_t total;
@@ -154,6 +148,12 @@ int tool_progress_cb(void *clientp,
   bar->calls++;
 
   if((total > 0) && (point != bar->prev)) {
+    char line[MAX_BARLENGTH + 1];
+    char format[40];
+    double frac;
+    double percent;
+    int barwidth;
+    int num;
     if(point > total)
       /* we have got more than the expected total! */
       total = point;
@@ -166,7 +166,7 @@ int tool_progress_cb(void *clientp,
       num = MAX_BARLENGTH;
     memset(line, '#', num);
     line[num] = '\0';
-    snprintf(format, sizeof(format), "\r%%-%ds %%5.1f%%%%", barwidth);
+    msnprintf(format, sizeof(format), "\r%%-%ds %%5.1f%%%%", barwidth);
     fprintf(bar->out, format, line, percent);
   }
   fflush(bar->out);

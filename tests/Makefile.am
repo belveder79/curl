@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2017, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -35,7 +35,7 @@ EXTRA_DIST = ftpserver.pl httpserver.pl secureserver.pl runtests.pl getpart.pm \
  FILEFORMAT README stunnel.pem memanalyze.pl testcurl.pl valgrind.pm ftp.pm   \
  sshserver.pl sshhelp.pm pathhelp.pm testcurl.1 runtests.1 \
  serverhelp.pm tftpserver.pl rtspserver.pl directories.pm symbol-scan.pl \
- CMakeLists.txt mem-include-scan.pl valgrind.supp http_pipe.py extern-scan.pl \
+ CMakeLists.txt mem-include-scan.pl valgrind.supp extern-scan.pl \
  manpage-scan.pl nroff-scan.pl http2-server.pl dictserver.py \
  negtelnetserver.py $(SMBDEPS)
 
@@ -75,7 +75,7 @@ TEST_T = -a -t
 TEST_E = -a -e
 
 # !flaky means that it'll skip all tests using the flaky keyword
-TEST_NF = -a -p -r !flaky
+TEST_NF = -a -p !flaky
 endif
 
 # make sure that PERL is pointing to an executable
