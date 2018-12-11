@@ -436,26 +436,26 @@ static CURLcode Curl_ossl_seed(struct Curl_easy *data)
       return CURLE_OK;
   }
 
-#if defined(HAVE_RAND_EGD)
-  /* only available in OpenSSL 0.9.5 and later */
-  /* EGD_SOCKET is set at configure time or not at all */
-#ifndef EGD_SOCKET
-  /* If we don't have the define set, we only do this if the egd-option
-     is set */
-  if(data->set.str[STRING_SSL_EGDSOCKET])
-#define EGD_SOCKET "" /* doesn't matter won't be used */
-#endif
-  {
-    /* If there's an option and a define, the option overrides the
-       define */
-    int ret = RAND_egd(data->set.str[STRING_SSL_EGDSOCKET]?
-                       data->set.str[STRING_SSL_EGDSOCKET]:EGD_SOCKET);
-    if(-1 != ret) {
-      if(rand_enough())
-        return CURLE_OK;
-    }
-  }
-#endif
+// #if defined(HAVE_RAND_EGD)
+//   /* only available in OpenSSL 0.9.5 and later */
+//   /* EGD_SOCKET is set at configure time or not at all */
+// #ifndef EGD_SOCKET
+//   /* If we don't have the define set, we only do this if the egd-option
+//      is set */
+//   if(data->set.str[STRING_SSL_EGDSOCKET])
+// #define EGD_SOCKET "" /* doesn't matter won't be used */
+// #endif
+//   {
+//     /* If there's an option and a define, the option overrides the
+//        define */
+//     int ret = RAND_egd(data->set.str[STRING_SSL_EGDSOCKET]?
+//                        data->set.str[STRING_SSL_EGDSOCKET]:EGD_SOCKET);
+//     if(-1 != ret) {
+//       if(rand_enough())
+//         return CURLE_OK;
+//     }
+//   }
+// #endif
 
   /* fallback to a custom seeding of the PRNG using a hash based on a current
      time */
