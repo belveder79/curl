@@ -1,5 +1,5 @@
 set(EXE_NAME curl)
-set(LIB_NAME curlwrapper)
+set(LIB_NAME libcurlwrapper)
 IF(UWP)
   ADD_DEFINITIONS(-DUWPBUILD)
 ENDIF(UWP)
@@ -133,4 +133,3 @@ install(EXPORT curl-target
         NAMESPACE CURL::
         DESTINATION ${CURL_INSTALL_CMAKE_DIR}
 )
-
