@@ -1,10 +1,8 @@
 set(EXE_NAME curl)
-set(LIB_NAME libcurlwrapper)
+set(LIB_NAME curlwrapper)
 IF(UWP)
   ADD_DEFINITIONS(-DUWPBUILD)
 ENDIF(UWP)
-
-#SET(DUMMY_LIB_NAME dummylib)
 
 if(USE_MANUAL)
   # Use the C locale to ensure that only ASCII characters appear in the
@@ -54,25 +52,13 @@ add_executable(
   testwrapper.c
 )
 
-#add_executable(
-#  testWrapperDummy
-#  testWrapperDummy.c
-#)
-
-#add_library(
-#  ${DUMMY_LIB_NAME} SHARED
-#  dummyDLL.c
-#  )
-#SET_TARGET_PROPERTIES(${DUMMY_LIB_NAME} PROPERTIES
-#  COMPILE_DEFINITIONS CUSTOM_API_EXPORT
-#)
-
 add_library(
   ${LIB_NAME} SHARED
   ${CURL_FILES}
   )
 SET_TARGET_PROPERTIES(${LIB_NAME} PROPERTIES
   COMPILE_DEFINITIONS CUSTOM_API_EXPORT
+  PREFIX "lib"
 )
 
 # CURL_FILES comes from Makefile.inc
