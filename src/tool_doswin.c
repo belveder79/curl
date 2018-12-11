@@ -659,7 +659,7 @@ CURLcode FindWin32CACert(struct OperationConfig *config,
 
     buf[0] = '\0';
 
-    // CLEMENS FIX!
+    // CLEMENS FIX
     res_len = 0; // res_len = SearchPathA(NULL, bundle_file, NULL, PATH_MAX, buf, &ptr);
     if(res_len > 0) {
       Curl_safefree(config->cacert);
@@ -676,13 +676,14 @@ CURLcode FindWin32CACert(struct OperationConfig *config,
 /* Get a list of all loaded modules with full paths.
  * Returns slist on success or NULL on error.
  */
-/*
 struct curl_slist *GetLoadedModulePaths(void)
 {
+  /*
   HANDLE hnd = INVALID_HANDLE_VALUE;
   MODULEENTRY32 mod = {0};
+  */
   struct curl_slist *slist = NULL;
-
+  /*
   mod.dwSize = sizeof(MODULEENTRY32);
 
   do {
@@ -701,7 +702,7 @@ struct curl_slist *GetLoadedModulePaths(void)
 
 #ifdef UNICODE
     // sizeof(mod.szExePath) is the max total bytes of wchars. the max total
-       bytes of multibyte chars won't be more than twice that.
+    //   bytes of multibyte chars won't be more than twice that.
     char buffer[sizeof(mod.szExePath) * 2];
     if(!WideCharToMultiByte(CP_ACP, 0, mod.szExePath, -1,
                             buffer, sizeof(buffer), NULL, NULL))
@@ -724,9 +725,10 @@ error:
 cleanup:
   if(hnd != INVALID_HANDLE_VALUE)
     CloseHandle(hnd);
+*/
   return slist;
 }
-*/
+
 #endif /* WIN32 */
 
 #endif /* MSDOS || WIN32 */
