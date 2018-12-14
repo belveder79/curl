@@ -45,6 +45,8 @@ include(Macros)
 include(CMakeDependentOption)
 include(CheckCCompilerFlag)
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ucm/cmake/ucm.cmake)
+
 project(CURL C)
 
 message(WARNING "the curl cmake build system is poorly maintained. Be aware")
@@ -69,6 +71,12 @@ message(STATUS "curl version=[${CURL_VERSION}]")
 # SET(PACKAGE_BUGREPORT "a suitable curl mailing list => https://curl.haxx.se/mail/")
 set(OPERATING_SYSTEM "${CMAKE_SYSTEM_NAME}")
 set(OS "\"${CMAKE_SYSTEM_NAME}\"")
+
+IF(UWP)
+  message(STATUS "Setting UWP")
+  ucm_set_runtime(DYNAMIC)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_CRT_SECURE_NO_WARNINGS")
+ENDIF(UWP)
 
 include_directories(${PROJECT_BINARY_DIR}/include/curl)
 include_directories(${CURL_SOURCE_DIR}/include)
