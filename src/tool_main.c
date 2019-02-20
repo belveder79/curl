@@ -61,7 +61,7 @@ DECLDIR int mainwrapped(char* argv)
 	for (int i = 0; i < strlen(argv); i++) {
 		if (*(argv + i) == '\"')
 			open = !open;
-		if ((*(argv + i) == ' ' || i == strlen(argv) - 1) && !open)
+		if (((*(argv + i) == ' ' && *(argv + i - 1) != '\\') || i == strlen(argv) - 1) && !open)
 		{
 			int len = (i == strlen(argv) - 1) ? (i - start + 1) : (i - start);
 			inargs[num] = malloc((len + 1) * sizeof(char));
@@ -70,7 +70,11 @@ DECLDIR int mainwrapped(char* argv)
 			start = i + 1; num++;
 		}
 	}
-
+  printf("num: %d\n", num);
+	for(int i = 0; i < num; i++)
+	{
+			printf("%d: %s\n",i, inargs[i]);
+	}
 	int retval = main(num, inargs);
 
 	// clean up memory
