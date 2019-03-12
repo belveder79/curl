@@ -1,5 +1,5 @@
 set(EXE_NAME curl)
-set(LIB_NAME curlwrapper)
+set(LIB_NAME libcurlwrapper)
 IF(UWP)
   ADD_DEFINITIONS(-DUWPBUILD)
 ENDIF(UWP)
@@ -47,19 +47,23 @@ if(MSVC)
   list(APPEND CURL_FILES curl.rc)
 endif()
 
-add_executable(
-  testwrapper
-  testwrapper.c
-)
-
 add_library(
   ${LIB_NAME} SHARED
   ${CURL_FILES}
   )
-SET_TARGET_PROPERTIES(${LIB_NAME} PROPERTIES
-  COMPILE_DEFINITIONS CUSTOM_API_EXPORT
-  PREFIX "lib"
-)
+
+set_target_properties(${LIB_NAME} PROPERTIES COMPILE_DEFINITIONS "CUSTOM_API_EXPORT")
+set_target_properties(${LIB_NAME} PROPERTIES PREFIX "")
+set_target_properties(${LIB_NAME} PROPERTIES IMPORT_PREFIX "")
+
+if(WIN32)
+  if(BUILD_SHARED_LIBS)
+    # Add "_imp" as a suffix before the extension to avoid conflicting with the statically linked "libcurl.lib"
+    set_target_properties(${LIB_NAME} PROPERTIES IMPORT_SUFFIX "_imp.lib")
+  endif()
+endif()
+
+target_link_libraries( ${LIB_NAME} libcurl ${CURL_LIBS})
 
 # CURL_FILES comes from Makefile.inc
 add_executable(
@@ -86,8 +90,11 @@ target_link_libraries(${EXE_NAME} libcurl ${CURL_LIBS})
 #  target_link_libraries( ${EXE_NAME} "-lrtmp")
 #ENDIF(USE_LIBRTMP)
 
-
-target_link_libraries( ${LIB_NAME} libcurl ${CURL_LIBS})
+# TEST WRAPPER
+add_executable(
+  testwrapper
+  testwrapper.c
+)
 
 target_link_libraries( testwrapper ${LIB_NAME} ${CURL_LIBS})
 IF(NOT WIN32)
