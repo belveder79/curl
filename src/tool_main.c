@@ -53,6 +53,8 @@
 #define DECLDIR __attribute__ ((visibility("default")))
 #endif
 
+int main(int argc, char *argv[]);
+
 DECLDIR int mainwrapped(char* argv)
 {
 	// convert char* to char*[]
