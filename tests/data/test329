@@ -31,7 +31,7 @@ moo
 # Client-side
 <client>
 <file name="log/jar329.txt" mode="text">
-.host.foo.com	TRUE	/we/want/	FALSE	2054030187	test	no
+.host.foo.com	TRUE	/we/want/	FALSE	2147483647	test	no
 </file>
 <server>
 http
@@ -52,17 +52,16 @@ http://%HOSTIP:%HTTPPORT/we/want/329 -b log/jar329.txt -H "Host: host.foo.com" h
 
 # Verify data after the test has been "shot"
 <verify>
-<strip>
-^User-Agent:.*
-</strip>
 <protocol>
 GET /we/want/329 HTTP/1.1
 Host: host.foo.com
+User-Agent: curl/%VERSION
 Accept: */*
 Cookie: test=no
 
 GET /we/want/3290002 HTTP/1.1
 Host: host.foo.com
+User-Agent: curl/%VERSION
 Accept: */*
 
 </protocol>

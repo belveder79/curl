@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -107,7 +107,7 @@ AC_HELP_STRING([--disable-curldebug],[Disable curl debug memory tracking]),
       ;;
     default)
       dnl configure's curldebug option not specified. Initially we will
-      dnl handle this as a a request to use the same setting as option
+      dnl handle this as a request to use the same setting as option
       dnl --enable-debug. IOW, initially, for debug-enabled builds
       dnl this will be handled as a request to enable curldebug if
       dnl possible, and for debug-disabled builds this will be handled
@@ -198,7 +198,7 @@ AC_HELP_STRING([--disable-optimize],[Disable compiler optimizations]),
       ;;
     default)
       dnl configure's optimize option not specified. Initially we will
-      dnl handle this as a a request contrary to configure's setting
+      dnl handle this as a request contrary to configure's setting
       dnl for --enable-debug. IOW, initially, for debug-enabled builds
       dnl this will be handled as a request to disable optimizations if
       dnl possible, and for debug-disabled builds this will be handled
@@ -647,4 +647,40 @@ AC_DEFUN([CURL_CHECK_NTLM_WB], [
       [Define absolute filename for winbind's ntlm_auth helper.])
     NTLM_WB_ENABLED=1
   fi
+])
+
+dnl CURL_CHECK_OPTION_ECH
+dnl -----------------------------------------------------
+dnl Verify whether configure has been invoked with option
+dnl --enable-ech or --disable-ech, and set
+dnl shell variable want_ech as appropriate.
+
+AC_DEFUN([CURL_CHECK_OPTION_ECH], [
+  AC_MSG_CHECKING([whether to enable ECH support])
+  OPT_ECH="default"
+  AC_ARG_ENABLE(ech,
+AC_HELP_STRING([--enable-ech],[Enable ECH support])
+AC_HELP_STRING([--disable-ech],[Disable ECH support]),
+  OPT_ECH=$enableval)
+  case "$OPT_ECH" in
+    no)
+      dnl --disable-ech option used
+      want_ech="no"
+      curl_ech_msg="no      (--enable-ech)"
+      AC_MSG_RESULT([no])
+      ;;
+    default)
+      dnl configure option not specified
+      want_ech="no"
+      curl_ech_msg="no      (--enable-ech)"
+      AC_MSG_RESULT([no])
+      ;;
+    *)
+      dnl --enable-ech option used
+      want_ech="yes"
+      curl_ech_msg="enabled (--disable-ech)"
+      experimental="ech"
+      AC_MSG_RESULT([yes])
+      ;;
+  esac
 ])

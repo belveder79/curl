@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -661,7 +661,7 @@ dnl -------------------------------------------------
 dnl Check for libraries needed for WINLDAP support,
 dnl and prepended to LIBS any needed libraries.
 dnl This macro can take an optional parameter with a
-dnl white space separated list of libraries to check
+dnl whitespace separated list of libraries to check
 dnl before the WINLDAP default ones.
 
 AC_DEFUN([CURL_CHECK_LIBS_WINLDAP], [
@@ -755,7 +755,7 @@ dnl -------------------------------------------------
 dnl Check for libraries needed for LDAP support,
 dnl and prepended to LIBS any needed libraries.
 dnl This macro can take an optional parameter with a
-dnl white space separated list of libraries to check
+dnl whitespace separated list of libraries to check
 dnl before the default ones.
 
 AC_DEFUN([CURL_CHECK_LIBS_LDAP], [
@@ -791,7 +791,9 @@ AC_DEFUN([CURL_CHECK_LIBS_LDAP], [
     '-lldap -llber' \
     '-llber -lldap' \
     '-lldapssl -lldapx -lldapsdk' \
-    '-lldapsdk -lldapx -lldapssl' ; do
+    '-lldapsdk -lldapx -lldapssl' \
+    '-lldap -llber -lssl -lcrypto' ; do
+
     if test "$curl_cv_ldap_LIBS" = "unknown"; then
       if test -z "$x_nlibs"; then
         LIBS="$curl_cv_save_LIBS"
@@ -1029,6 +1031,10 @@ AC_DEFUN([CURL_CHECK_FUNC_RECV], [
 #endif
 #endif
 #else
+#ifdef HAVE_PROTO_BSDSOCKET_H
+#include <proto/bsdsocket.h>
+struct Library *SocketBase = NULL;
+#endif
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -1074,6 +1080,10 @@ AC_DEFUN([CURL_CHECK_FUNC_RECV], [
 #endif
 #define RECVCALLCONV PASCAL
 #else
+#ifdef HAVE_PROTO_BSDSOCKET_H
+#include <proto/bsdsocket.h>
+struct Library *SocketBase = NULL;
+#endif
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -1082,11 +1092,10 @@ AC_DEFUN([CURL_CHECK_FUNC_RECV], [
 #endif
 #define RECVCALLCONV
 #endif
+#ifndef HAVE_PROTO_BSDSOCKET_H
                       extern $recv_retv RECVCALLCONV
-#ifdef __ANDROID__
-__attribute__((overloadable))
-#endif
                       recv($recv_arg1, $recv_arg2, $recv_arg3, $recv_arg4);
+#endif
                     ]],[[
                       $recv_arg1 s=0;
                       $recv_arg2 buf=0;
@@ -1166,6 +1175,10 @@ AC_DEFUN([CURL_CHECK_FUNC_SEND], [
 #endif
 #endif
 #else
+#ifdef HAVE_PROTO_BSDSOCKET_H
+#include <proto/bsdsocket.h>
+struct Library *SocketBase = NULL;
+#endif
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -1211,6 +1224,10 @@ AC_DEFUN([CURL_CHECK_FUNC_SEND], [
 #endif
 #define SENDCALLCONV PASCAL
 #else
+#ifdef HAVE_PROTO_BSDSOCKET_H
+#include <proto/bsdsocket.h>
+struct Library *SocketBase = NULL;
+#endif
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -1219,11 +1236,10 @@ AC_DEFUN([CURL_CHECK_FUNC_SEND], [
 #endif
 #define SENDCALLCONV
 #endif
+#ifndef HAVE_PROTO_BSDSOCKET_H
                       extern $send_retv SENDCALLCONV
-#ifdef __ANDROID__
-__attribute__((overloadable))
-#endif
                       send($send_arg1, $send_arg2, $send_arg3, $send_arg4);
+#endif
                     ]],[[
                       $send_arg1 s=0;
                       $send_arg3 len=0;
@@ -1325,6 +1341,10 @@ AC_DEFUN([CURL_CHECK_MSG_NOSIGNAL], [
 #endif
 #endif
 #else
+#ifdef HAVE_PROTO_BSDSOCKET_H
+#include <proto/bsdsocket.h>
+struct Library *SocketBase = NULL;
+#endif
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -1718,6 +1738,7 @@ dnl using current libraries or if another one is required.
 
 AC_DEFUN([CURL_CHECK_LIBS_CONNECT], [
   AC_REQUIRE([CURL_INCLUDES_WINSOCK2])dnl
+  AC_REQUIRE([CURL_INCLUDES_BSDSOCKET])dnl
   AC_MSG_CHECKING([for connect in libraries])
   tst_connect_save_LIBS="$LIBS"
   tst_connect_need_LIBS="unknown"
@@ -1727,7 +1748,8 @@ AC_DEFUN([CURL_CHECK_LIBS_CONNECT], [
       AC_LINK_IFELSE([
         AC_LANG_PROGRAM([[
           $curl_includes_winsock2
-          #ifndef HAVE_WINDOWS_H
+          $curl_includes_bsdsocket
+          #if !defined(HAVE_WINDOWS_H) && !defined(HAVE_PROTO_BSDSOCKET_H)
             int connect(int, void*, int);
           #endif
         ]],[[
@@ -1858,8 +1880,15 @@ AC_DEFUN([CURL_CHECK_FUNC_SELECT], [
 #endif
 #endif
 #ifndef HAVE_WINDOWS_H
+#ifdef HAVE_PROTO_BSDSOCKET_H
+#include <proto/bsdsocket.h>
+struct Library *SocketBase = NULL;
+#define select(a,b,c,d,e) WaitSelect(a,b,c,d,e,0)
+#endif
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
+#elif defined(HAVE_UNISTD_H)
+#include <unistd.h>
 #endif
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
@@ -1916,8 +1945,15 @@ AC_DEFUN([CURL_CHECK_FUNC_SELECT], [
 #endif
 #endif
 #ifndef HAVE_WINDOWS_H
+#ifdef HAVE_PROTO_BSDSOCKET_H
+#include <proto/bsdsocket.h>
+struct Library *SocketBase = NULL;
+#define select(a,b,c,d,e) WaitSelect(a,b,c,d,e,0)
+#endif
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
+#elif defined(HAVE_UNISTD_H)
+#include <unistd.h>
 #endif
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
@@ -1930,15 +1966,14 @@ AC_DEFUN([CURL_CHECK_FUNC_SELECT], [
                       long tv_usec;
                     };
 #endif
+#ifndef HAVE_PROTO_BSDSOCKET_H
                     extern $sel_retv SELECTCALLCONV
-#ifdef __ANDROID__
-__attribute__((overloadable))
-#endif
-			select($sel_arg1,
+				select($sel_arg1,
 					$sel_arg234,
 					$sel_arg234,
 					$sel_arg234,
 					$sel_arg5);
+#endif
                   ]],[[
                     $sel_arg1   nfds=0;
                     $sel_arg234 rfds=0;
@@ -2143,8 +2178,8 @@ AC_HELP_STRING([--without-ca-bundle], [Don't use a default CA bundle]),
   AC_ARG_WITH(ca-path,
 AC_HELP_STRING([--with-ca-path=DIRECTORY],
 [Path to a directory containing CA certificates stored individually, with \
-their filenames in a hash format. This option can be used with OpenSSL, \
-GnuTLS and PolarSSL backends. Refer to OpenSSL c_rehash for details. \
+their filenames in a hash format. This option can be used with the OpenSSL, \
+GnuTLS and mbedTLS backends. Refer to OpenSSL c_rehash for details. \
 (example: /etc/certificates)])
 AC_HELP_STRING([--without-ca-path], [Don't use a default CA path]),
   [
@@ -2170,8 +2205,8 @@ AC_HELP_STRING([--without-ca-path], [Don't use a default CA path]),
     capath="no"
   elif test "x$want_capath" != "xno" -a "x$want_capath" != "xunset"; then
     dnl --with-ca-path given
-    if test "x$OPENSSL_ENABLED" != "x1" -a "x$GNUTLS_ENABLED" != "x1" -a "x$POLARSSL_ENABLED" != "x1"; then
-      AC_MSG_ERROR([--with-ca-path only works with OpenSSL, GnuTLS or PolarSSL])
+    if test "x$OPENSSL_ENABLED" != "x1" -a "x$GNUTLS_ENABLED" != "x1" -a "x$MBEDTLS_ENABLED" != "x1"; then
+      AC_MSG_ERROR([--with-ca-path only works with OpenSSL, GnuTLS or mbedTLS])
     fi
     capath="$want_capath"
     ca="no"
