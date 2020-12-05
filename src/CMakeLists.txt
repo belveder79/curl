@@ -20,7 +20,7 @@
 #
 ###########################################################################
 set(EXE_NAME curl)
-set(LIB_NAME libcurlwrapper)
+set(LIB_NAME libcurltool)
 IF(UWP)
   ADD_DEFINITIONS(-DUWPBUILD)
 ENDIF(UWP)
@@ -157,6 +157,7 @@ set_target_properties(${LIB_NAME} PROPERTIES
 
 #INCLUDE(ModuleInstall OPTIONAL)
 
+install(TARGETS ${LIB_NAME} EXPORT ${TARGETS_EXPORT_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(TARGETS ${EXE_NAME} EXPORT ${TARGETS_EXPORT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
 export(TARGETS ${EXE_NAME}
        APPEND FILE ${PROJECT_BINARY_DIR}/curl-target.cmake
