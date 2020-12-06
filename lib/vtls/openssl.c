@@ -2831,8 +2831,16 @@ static CURLcode ossl_connect_step1(struct connectdata *conn, int sockindex)
   if((SSL_CONN_CONFIG(verifypeer) || SSL_CONN_CONFIG(verifyhost)) &&
      (SSL_SET_OPTION(native_ca_store))) {
     X509_STORE *store = SSL_CTX_get_cert_store(backend->ctx);
+#ifdef UWPBUILD
+    HCERTSTORE hStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_A,
+        X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+        (HCRYPTPROV_LEGACY)NULL,
+        CERT_SYSTEM_STORE_CURRENT_USER,
+        TEXT("ROOT"));
+#else
     HCERTSTORE hStore = CertOpenSystemStore((HCRYPTPROV_LEGACY)NULL,
-                                            TEXT("ROOT"));
+        TEXT("ROOT"));
+#endif
 
     if(hStore) {
       PCCERT_CONTEXT pContext = NULL;

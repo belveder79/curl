@@ -53,7 +53,11 @@
 #define DECLDIR __attribute__ ((visibility("default")))
 #endif
 
+#ifdef _UNICODE
+int wmain(int argc, wchar_t* argv[]);
+#else
 int main(int argc, char *argv[]);
+#endif
 
 DECLDIR int mainwrapped(char* argv)
 {
@@ -77,8 +81,11 @@ DECLDIR int mainwrapped(char* argv)
 	{
 			printf("%d: %s\n",i, inargs[i]);
 	}
+#ifdef _UNICODE
+	int retval = wmain(num, inargs);
+#else
 	int retval = main(num, inargs);
-
+#endif
 	// clean up memory
 	for (int i = 0; i < num; i++)
 		free(inargs[i]);
