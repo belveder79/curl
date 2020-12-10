@@ -72,7 +72,16 @@ DECLDIR int mainwrapped(char* argv)
 			int len = (i == strlen(argv) - 1) ? (i - start + 1) : (i - start);
 			inargs[num] = malloc((len + 1) * sizeof(char));
 			strncpy(inargs[num], argv + start, len);
-			inargs[num][len] = '\0';
+			// filter out special chars...
+			int tcp = 0;
+			for(int j = 0; j < len; j++)
+			{
+					inargs[num][tcp] = inargs[num][j];
+					if(inargs[num][j] != '\\')
+						tcp++;
+			}
+			// printf("TCP vers. LEN: %d vs. %d\n", tcp, len);
+			inargs[num][tcp] = '\0';
 			start = i + 1; num++;
 		}
 	}
