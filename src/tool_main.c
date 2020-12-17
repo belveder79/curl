@@ -77,7 +77,7 @@ DECLDIR int mainwrapped(char* argv)
 			for(int j = 0; j < len; j++)
 			{
 					inargs[num][tcp] = inargs[num][j];
-					if(inargs[num][j] != '\\')
+					if(inargs[num][j] != '\\' && inargs[num][j] != '\"')
 						tcp++;
 			}
 			// printf("TCP vers. LEN: %d vs. %d\n", tcp, len);
